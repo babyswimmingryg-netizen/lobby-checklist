@@ -77,7 +77,10 @@ body.drawer-open .zoom{right:426px}
 /* palette */
 .palette{left:12px;top:12px;bottom:86px;width:96px;overflow-y:auto;padding:6px;display:none;-webkit-overflow-scrolling:touch}
 .edit .palette{display:block}
-.palette h4{font-size:11px;color:var(--muted);margin:8px 2px 4px;font-weight:600;text-align:center}
+.palette h4{font-size:11px;color:var(--blue-dd);margin:6px 0 4px;padding:6px 4px;font-weight:700;text-align:center;line-height:1.25;background:var(--blue-ll);border-radius:10px;cursor:pointer;position:relative}
+.palette h4 i{display:block;font-style:normal;font-size:10px;color:var(--muted);transition:transform .2s}
+.palette .pg.closed h4 i{transform:rotate(-90deg)}
+.palette .pg.closed .pi{display:none}
 .palette button{width:100%;padding:6px 2px 5px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;line-height:1.15;color:var(--ink)}
 .palette button:active{background:var(--orange-l)}
 .palette button svg{width:46px;height:34px}
@@ -355,19 +358,67 @@ const TYPES = {
   chair:      {n:'เก้าอี้', g:'f', w:45, h:45, c:'#86C0DF', chk:['ที่นั่งสะอาด แห้ง','ขาเก้าอี้มั่นคง ไม่โยก','ไม่มีรอยแตก/ชำรุด']},
   sofa:       {n:'โซฟา', g:'f', w:180, h:80, c:'#A9D2E8', chk:['เบาะสะอาด ไม่มีคราบ','ไม่มีรอยขาด/ฉีก','จัดหมอนเรียบร้อย']},
   cabinet:    {n:'ตู้', g:'f', w:100, h:45, c:'#E9D4B4', chk:['ประตูเปิด-ปิดได้ปกติ','ภายในเป็นระเบียบ','มือจับ/กุญแจใช้งานได้']},
-  locker:     {n:'ล็อกเกอร์', g:'f', w:140, h:45, c:'#BFDDEE', chk:['ประตูล็อกเกอร์ปิดสนิท','กุญแจครบทุกช่อง','ภายในสะอาด แห้ง']},
   shoe:       {n:'ชั้นวางรองเท้า', g:'f', w:120, h:35, c:'#EBCB98', chk:['รองเท้าจัดเป็นระเบียบ','ชั้นวางไม่ชำรุด','พื้นรอบๆ แห้ง สะอาด']},
   counter:    {n:'เคาน์เตอร์', g:'f', w:220, h:60, c:'#F0B662', chk:['พื้นผิวสะอาด','อุปกรณ์ครบ (ปากกา เอกสาร)','เจลล้างมือพร้อมใช้']},
   fridge:     {n:'ตู้เย็น', g:'e', w:70, h:70, c:'#EEF6FB', chk:['อุณหภูมิปกติ (2–8°C)','ภายในสะอาด ไม่มีของหมดอายุ','ขอบยางประตูปิดสนิท']},
   water:      {n:'ตู้น้ำดื่ม', g:'e', w:40, h:40, c:'#EEF6FB', chk:['น้ำดื่มเพียงพอ','แก้ว/ถ้วยพร้อมใช้','ไม่มีน้ำรั่วซึม']},
   tv:         {n:'ทีวี/จอ', g:'e', w:110, h:14, c:'#4A4F55', chk:['เปิดใช้งานได้ปกติ','หน้าจอสะอาด','สายไฟเรียบร้อย ปลอดภัย']},
   ac:         {n:'แอร์', g:'e', w:90, h:25, c:'#FFFFFF', chk:['ทำงานปกติ เย็นดี','ไม่มีน้ำหยด','ตั้งอุณหภูมิเหมาะสม']},
-  sign:       {n:'ป้ายติดผนัง', g:'e', w:80, h:12, c:'#F0B662', chk:['ป้ายติดแน่น ไม่หลุด','ข้อความชัดเจน เป็นปัจจุบัน','ไม่ซีดจาง/ขาด']},
+  sign:       {n:'ป้ายติดผนัง', g:'o', w:80, h:12, c:'#F0B662', chk:['ป้ายติดแน่น ไม่หลุด','ข้อความชัดเจน เป็นปัจจุบัน','ไม่ซีดจาง/ขาด']},
   fire:       {n:'ถังดับเพลิง', g:'e', w:28, h:28, c:'#E5636A', chk:['เข็มวัดแรงดันอยู่โซนเขียว','ยังไม่หมดอายุ','วางในที่เข้าถึงง่าย']},
   firstaid:   {n:'ชุดปฐมพยาบาล', g:'e', w:40, h:26, c:'#FFFFFF', chk:['อุปกรณ์ครบตามรายการ','ยา/เวชภัณฑ์ไม่หมดอายุ']},
   trash:      {n:'ถังขยะ', g:'e', w:35, h:35, c:'#A9B4BC', chk:['เทขยะแล้ว','เปลี่ยนถุงใหม่','ไม่มีกลิ่น']},
   plant:      {n:'ต้นไม้', g:'e', w:50, h:50, c:'#8CCB9B', chk:['รดน้ำแล้ว','ใบไม่เหี่ยว/เหลือง','กระถางสะอาด']},
   mat:        {n:'พรม/แผ่นกันลื่น', g:'e', w:150, h:90, c:'#FBE3BC', chk:['วางเรียบ ไม่ม้วนขอบ','สะอาด แห้ง']},
+  // สระว่ายน้ำ & ห้องเปลี่ยนชุด
+  pool:       {n:'สระว่ายน้ำ', g:'p', w:1000, h:500, c:'#7CC8EC', chk:['ระดับน้ำปกติ','น้ำใส ไม่มีสิ่งแปลกปลอม','ค่าคลอรีน/pH อยู่ในเกณฑ์','ขอบสระไม่แตก ไม่ลื่น']},
+  kidpool:    {n:'สระเด็ก', g:'p', w:300, h:300, c:'#9BD6F0', chk:['น้ำใส สะอาด','ค่าคลอรีน/pH อยู่ในเกณฑ์','ระดับน้ำเหมาะกับเด็ก','ขอบสระปลอดภัย']},
+  ladder:     {n:'บันไดสระ', g:'p', w:60, h:40, c:'#9BB7C9', chk:['ราวจับแน่น ไม่โยก','ขั้นบันไดไม่ลื่น ไม่ชำรุด','ไม่มีขอบคม/สนิม']},
+  lane:       {n:'เชือกกั้นลู่', g:'p', w:500, h:10, c:'#E5636A', chk:['เชือกตึง ยึดแน่น','ทุ่นไม่แตกหัก']},
+  lifeguard:  {n:'เก้าอี้ไลฟ์การ์ด', g:'p', w:70, h:70, c:'#E5636A', chk:['เก้าอี้มั่นคง','นกหวีด/อุปกรณ์ช่วยชีวิตพร้อม','มีผู้ดูแลประจำจุด']},
+  buoy:       {n:'ห่วงชูชีพ', g:'p', w:45, h:45, c:'#E5636A', chk:['อยู่ในตำแหน่ง หยิบได้ทันที','เชือกไม่ขาด สภาพดี']},
+  equip:      {n:'ชั้นวางอุปกรณ์ว่ายน้ำ', g:'p', w:120, h:50, c:'#EEF3F6', chk:['อุปกรณ์ครบตามจำนวน','สะอาด ไม่มีคราบ/เชื้อรา','จัดเก็บเป็นระเบียบ แห้ง']},
+  kickboard:  {n:'โฟมเตะขา (คิกบอร์ด)', g:'p', w:45, h:32, c:'#F0B662', chk:['ไม่แตก/ขาด','สะอาด แห้ง']},
+  noodle:     {n:'โฟมเส้น (นู้ดเดิล)', g:'p', w:150, h:10, c:'#8CCB9B', chk:['ไม่ฉีกขาด','สะอาด แห้ง']},
+  ring:       {n:'ห่วงยาง/ห่วงพยุง', g:'p', w:50, h:50, c:'#F0B662', chk:['ไม่รั่ว ลมพอดี','สะอาด ไม่มีเชื้อรา']},
+  toybox:     {n:'กล่องของเล่นน้ำ', g:'p', w:70, h:50, c:'#F5D7A1', chk:['ของเล่นครบ ไม่แตกหัก','ล้างฆ่าเชื้อแล้ว','ไม่มีชิ้นเล็กที่เด็กกลืนได้']},
+  changemat:  {n:'เบาะเปลี่ยนชุด', g:'p', w:120, h:60, c:'#F7C9C2', chk:['เบาะสะอาด เช็ดฆ่าเชื้อแล้ว','ไม่ฉีกขาด','ผ้ารอง/ทิชชูพร้อมใช้']},
+  changetable:{n:'โต๊ะเปลี่ยนผ้าอ้อม', g:'p', w:90, h:60, c:'#A9D2E8', chk:['พื้นผิวสะอาด ฆ่าเชื้อแล้ว','ขอบกันตกแข็งแรง','ถุงทิ้งผ้าอ้อมพร้อมใช้']},
+  shower:     {n:'ฝักบัว', g:'p', w:80, h:80, c:'#C9D3DA', chk:['น้ำไหลปกติ อุณหภูมิเหมาะสม','พื้นไม่ลื่น ไม่มีตะไคร่','ท่อระบายน้ำไม่อุดตัน']},
+  bench:      {n:'ม้านั่งยาว', g:'p', w:180, h:40, c:'#E9C995', chk:['มั่นคง ไม่โยก','สะอาด แห้ง','ไม่มีเสี้ยน/ขอบคม']},
+  locker:     {n:'ล็อกเกอร์', g:'p', w:140, h:45, c:'#BFDDEE', chk:['ประตูล็อกเกอร์ปิดสนิท','กุญแจครบทุกช่อง','ภายในสะอาด แห้ง']},
+  deckchair:  {n:'เตียงริมสระ', g:'p', w:70, h:180, c:'#FFFFFF', chk:['โครงไม่ชำรุด','ผ้า/เบาะสะอาด']},
+  towel:      {n:'ราวตากผ้าเช็ดตัว', g:'p', w:120, h:24, c:'#86C0DF', chk:['ราวยึดแน่น','ผ้าเช็ดตัวสะอาด เพียงพอ']},
+  wetsign:    {n:'ป้ายระวังพื้นลื่น', g:'p', w:40, h:40, c:'#F5C842', chk:['วางในจุดที่พื้นเปียก','ป้ายไม่ชำรุด มองเห็นชัด']},
+  filter:     {n:'เครื่องกรอง/ปั๊มน้ำ', g:'p', w:90, h:60, c:'#4D98C4', chk:['ทำงานปกติ ไม่มีเสียงผิดปกติ','แรงดันอยู่ในเกณฑ์','ไม่มีน้ำรั่ว']},
+  chem:       {n:'ถังคลอรีน/สารเคมี', g:'p', w:40, h:40, c:'#4D98C4', chk:['ปิดฝาสนิท จัดเก็บในที่ปลอดภัย','ติดฉลากชัดเจน','เด็กเข้าถึงไม่ได้']},
+  toilet:     {n:'ชักโครก', g:'p', w:40, h:65, c:'#FFFFFF', chk:['สะอาด กดน้ำได้ปกติ','กระดาษชำระเพียงพอ','ไม่มีกลิ่น']},
+  sink:       {n:'อ่างล้างมือ', g:'p', w:55, h:45, c:'#FFFFFF', chk:['น้ำไหลปกติ ไม่รั่ว','สบู่ล้างมือเพียงพอ','กระจก/อ่างสะอาด']},
+  hairdryer:  {n:'จุดเป่าผม', g:'p', w:60, h:30, c:'#F7C9C2', chk:['ไดร์ใช้งานได้','สายไฟไม่ชำรุด ห่างจากน้ำ']},
+  // สำนักงาน & ป้าย
+  desk:       {n:'โต๊ะทำงาน', g:'o', w:140, h:70, c:'#E9D4B4', chk:['พื้นผิวสะอาด เป็นระเบียบ','ลิ้นชักใช้งานได้','สายไฟจัดเรียบร้อย']},
+  desk_l:     {n:'โต๊ะทำงานตัวแอล', g:'o', w:160, h:140, c:'#E9D4B4', chk:['พื้นผิวสะอาด เป็นระเบียบ','ลิ้นชักใช้งานได้','สายไฟจัดเรียบร้อย']},
+  ochair:     {n:'เก้าอี้สำนักงาน', g:'o', w:55, h:55, c:'#5E6B75', chk:['ล้อและโช้คใช้งานได้','เบาะสะอาด ไม่ขาด']},
+  computer:   {n:'คอมพิวเตอร์', g:'o', w:60, h:45, c:'#3E464D', chk:['เปิดใช้งานได้ปกติ','หน้าจอ/คีย์บอร์ดสะอาด','สายไฟเรียบร้อย']},
+  laptop:     {n:'โน้ตบุ๊ก/แท็บเล็ต', g:'o', w:36, h:26, c:'#C9D3DA', chk:['ชาร์จแบตเตอรี่แล้ว','ใช้งานได้ปกติ']},
+  printer:    {n:'เครื่องพิมพ์', g:'o', w:55, h:45, c:'#E3E8EC', chk:['กระดาษเพียงพอ','หมึกเพียงพอ','ไม่มีกระดาษติด']},
+  phone:      {n:'โทรศัพท์', g:'o', w:24, h:22, c:'#4A4F55', chk:['มีสัญญาณ ใช้งานได้','สะอาด']},
+  pos:        {n:'เครื่องคิดเงิน/POS', g:'o', w:40, h:36, c:'#4A4F55', chk:['เปิดใช้งานได้','กระดาษใบเสร็จเพียงพอ','รับชำระ QR/บัตรได้']},
+  filing:     {n:'ตู้เอกสาร', g:'o', w:50, h:60, c:'#C9D3DA', chk:['ลิ้นชักเปิด-ปิดได้','ล็อกกุญแจได้','เอกสารจัดเป็นระเบียบ']},
+  storage:    {n:'ตู้เก็บของสูง', g:'o', w:90, h:50, c:'#D8C3A5', chk:['ประตูเปิด-ปิดได้','ภายในเป็นระเบียบ','ยึดผนังกันล้ม']},
+  display:    {n:'ตู้โชว์กระจก', g:'o', w:100, h:45, c:'#E7F3FA', chk:['กระจกสะอาด ไม่แตก','ของโชว์จัดเรียบร้อย','ไฟในตู้ใช้งานได้']},
+  bookshelf:  {n:'ชั้นวางของ/หนังสือ', g:'o', w:100, h:35, c:'#E9D4B4', chk:['ชั้นมั่นคง ยึดผนังแล้ว','จัดของเป็นระเบียบ','ไม่มีฝุ่น']},
+  safe:       {n:'ตู้เซฟ', g:'o', w:50, h:50, c:'#5E6B75', chk:['ล็อกเรียบร้อย','ใช้งานได้ปกติ']},
+  desksign:   {n:'ป้ายตั้งโต๊ะ', g:'o', w:30, h:12, c:'#F0B662', chk:['ข้อความถูกต้อง เป็นปัจจุบัน','ตั้งตรง ไม่ชำรุด']},
+  standee:    {n:'ป้ายตั้งพื้น/สแตนดี้', g:'o', w:60, h:22, c:'#86C0DF', chk:['ตั้งมั่นคง ไม่ล้ม','ข้อความ/โปรโมชันเป็นปัจจุบัน','ไม่ขาด/ซีดจาง']},
+  whiteboard: {n:'ไวท์บอร์ด', g:'o', w:150, h:10, c:'#FFFFFF', chk:['ลบสะอาด','ปากกาไวท์บอร์ดใช้ได้','ยึดผนังแน่น']},
+  noticeboard:{n:'บอร์ดประกาศ', g:'o', w:120, h:10, c:'#D9A46B', chk:['ประกาศเป็นปัจจุบัน','เอาประกาศหมดอายุออกแล้ว','ติดเป็นระเบียบ']},
+  brochure:   {n:'ชั้นวางโบรชัวร์', g:'o', w:40, h:30, c:'#E9D4B4', chk:['โบรชัวร์เพียงพอ','จัดเรียงเรียบร้อย','ข้อมูลเป็นปัจจุบัน']},
+  clock:      {n:'นาฬิกาแขวน', g:'o', w:30, h:30, c:'#FFFFFF', chk:['เวลาตรง','แบตเตอรี่ใช้ได้']},
+  cctv:       {n:'กล้องวงจรปิด', g:'o', w:30, h:30, c:'#86C0DF', chk:['กล้องทำงาน ไฟสถานะปกติ','มุมกล้องถูกต้อง','เลนส์สะอาด']},
+  sanitizer:  {n:'เจลล้างมือ', g:'o', w:20, h:20, c:'#86C0DF', chk:['เจลเพียงพอ','หัวกดใช้งานได้']},
+  lamp:       {n:'โคมไฟ', g:'o', w:35, h:35, c:'#F5C842', chk:['ไฟติด','สายไฟปลอดภัย']},
+  mirror:     {n:'กระจกเงา', g:'s', w:100, h:8, c:'#DDF0FA', chk:['กระจกสะอาด','ยึดแน่น ไม่แตก']},
   wall:       {n:'ผนัง', g:'s', w:200, h:12, c:'#7D8B96', chk:[], noInspect:true},
   door:       {n:'ประตู', g:'s', w:90, h:90, c:'#F0B662', chk:['เปิด-ปิดได้ลื่น','กลอน/ล็อกใช้งานได้','กระจก/มือจับสะอาด']},
   window:     {n:'หน้าต่าง', g:'s', w:120, h:12, c:'#BFE1F3', chk:['กระจกสะอาด','ไม่มีรอยแตก','ม่าน/มู่ลี่เรียบร้อย']},
@@ -377,7 +428,9 @@ const TYPES = {
   zone:       {n:'โซน/พื้นที่', g:'b', w:250, h:180, c:'#86C0DF', chk:['พื้นที่สะอาด เป็นระเบียบ','ไม่มีสิ่งกีดขวาง'], noInspect:true},
   text:       {n:'ข้อความ', g:'b', w:140, h:30, c:'#4A4F55', chk:[], noInspect:true},
 };
-const GROUPS = [['f','เฟอร์นิเจอร์'],['e','อุปกรณ์'],['s','โครงสร้าง'],['b','รูปทรงพื้นฐาน']];
+const GROUPS = [['p','สระว่ายน้ำ & ห้องเปลี่ยนชุด'],['f','เฟอร์นิเจอร์'],['o','สำนักงาน & ป้าย'],['e','อุปกรณ์ทั่วไป'],['s','โครงสร้าง'],['b','รูปทรงพื้นฐาน']];
+const FLOOR_TYPES = new Set(['zone', 'mat', 'pool', 'kidpool']);   // วาดไว้ใต้ของอื่นเสมอ
+const FLAT_TYPES = new Set(['zone', 'text', 'mat', 'pool', 'kidpool', 'lane']); // ไม่มีเงา
 const STATUS = {
   ok:      {n:'ปกติ / ผ่าน', s:'ปกติ', c:'var(--ok)', hex:'#4FB487', g:'✓'},
   repair:  {n:'ต้องซ่อมแซม', s:'ต้องซ่อม', c:'var(--repair)', hex:'#E5636A', g:'!'},
@@ -427,6 +480,92 @@ function drawShape(type, w, h, c, o = {}) {
       for (let i = 0; i < 6; i++) { const a = i*60; s += `<ellipse cx="${cx}" cy="${cy-m*.2}" rx="${m*.13}" ry="${m*.24}" fill="${c}" stroke="${sk}" stroke-width="${sw*.7}" transform="rotate(${a} ${cx} ${cy})"/>`; }
       return s + `<circle cx="${cx}" cy="${cy}" r="${m*.1}" fill="${sk}"/>`; }
     case 'mat': return R(1,1,w-2,h-2,m*.08,c,sk) + R(m*.08,m*.08,w-m*.16,h-m*.16,m*.05,'none',null,`stroke="${sk}" stroke-width="${sw*.7}" stroke-dasharray="${sw*2} ${sw*2}"`);
+    case 'pool': case 'kidpool': {
+      const round = type === 'kidpool', bd = clamp(m * .05, 8, 35), wl = shade(c, .45);
+      let s = round ? `<ellipse cx="${w/2}" cy="${h/2}" rx="${w/2-1}" ry="${h/2-1}" fill="#E8F0F4" stroke="#B9CCD8" stroke-width="${sw}"/><ellipse cx="${w/2}" cy="${h/2}" rx="${w/2-bd}" ry="${h/2-bd}" fill="${c}" stroke="${shade(c,-.15)}" stroke-width="${sw*.6}"/>`
+        : R(1,1,w-2,h-2,bd,'#E8F0F4','#B9CCD8') + R(bd,bd,w-bd*2,h-bd*2,bd*.5,c,null,`stroke="${shade(c,-.15)}" stroke-width="${sw*.6}"`);
+      if (!round && Math.max(w, h) >= 500) {
+        const along = w >= h, sh = (along ? h : w) - bd*2, n = Math.max(2, Math.floor(sh / 200));
+        for (let i = 1; i < n; i++) { const t = bd + sh * i / n;
+          s += along ? `<line x1="${bd*2.5}" y1="${t}" x2="${w-bd*2.5}" y2="${t}" stroke="#2E77A3" stroke-opacity=".45" stroke-width="${sw*1.4}" stroke-dasharray="${sw*5} ${sw*3}"/>`
+                     : `<line x1="${t}" y1="${bd*2.5}" x2="${t}" y2="${h-bd*2.5}" stroke="#2E77A3" stroke-opacity=".45" stroke-width="${sw*1.4}" stroke-dasharray="${sw*5} ${sw*3}"/>`; }
+      }
+      const a = m * .07;
+      for (const [fx, fy] of [[.28,.3],[.62,.24],[.45,.7],[.78,.62]]) { const x = w*fx, y = h*fy;
+        s += `<path d="M${x-a} ${y} q${a/2} ${-a/2.5} ${a} 0 t${a} 0" fill="none" stroke="${wl}" stroke-width="${sw*.9}" stroke-linecap="round"/>`; }
+      return s; }
+    case 'ladder': return L(w*.18,0,w*.18,h,c,sw*1.8) + L(w*.82,0,w*.82,h,c,sw*1.8) + [.3,.6,.9].map(k => L(w*.18,h*k,w*.82,h*k,shade(c,.3),sw*1.4)).join('')
+      + `<circle cx="${w*.18}" cy="${sw}" r="${sw*1.4}" fill="${c}"/><circle cx="${w*.82}" cy="${sw}" r="${sw*1.4}" fill="${c}"/>`;
+    case 'lane': { const n = clamp(Math.round(w / (h * 1.5)), 2, 300), cols = [c, '#FFFFFF', '#4D98C4'];
+      let s = L(0,h/2,w,h/2,'#9BB7C9',Math.max(1,h*.15));
+      for (let i = 0; i < n; i++) s += `<circle cx="${(i+.5)*w/n}" cy="${h/2}" r="${Math.min(h*.48, w/n*.45)}" fill="${cols[Math.floor(i/3)%3]}" stroke="#9BB7C9" stroke-width="${Math.max(.5,h*.06)}"/>`;
+      return s; }
+    case 'lifeguard': return L(0,0,w*.22,h*.22,'#9BB7C9',sw*1.5) + L(w,0,w*.78,h*.22,'#9BB7C9',sw*1.5) + L(0,h,w*.22,h*.78,'#9BB7C9',sw*1.5) + L(w,h,w*.78,h*.78,'#9BB7C9',sw*1.5)
+      + [.84,.92].map(k => L(w*.22,h*k,w*.78,h*k,'#9BB7C9',sw*1.2)).join('')
+      + R(w*.2,h*.12,w*.6,h*.58,m*.1,'#FFFFFF',sk) + R(w*.2,h*.12,w*.6,h*.18,m*.08,c,null) + L(w*.28,h*.48,w*.72,h*.48,c,sw*1.4);
+    case 'buoy': { const r = m*.34, C = 2*Math.PI*r;
+      return `<circle cx="${w/2}" cy="${h/2}" r="${r}" fill="none" stroke="${c}" stroke-width="${m*.22}"/><circle cx="${w/2}" cy="${h/2}" r="${r}" fill="none" stroke="#fff" stroke-width="${m*.22}" stroke-dasharray="${C/8} ${C/8}"/>`
+        + `<circle cx="${w/2}" cy="${h/2}" r="${m*.48}" fill="none" stroke="#9BB7C9" stroke-width="${sw*.6}" stroke-dasharray="${sw*2} ${sw*1.5}"/>`; }
+    case 'equip': { const cols = ['#F0B662','#86C0DF','#8CCB9B','#E5636A','#9C7FD6'], n = Math.max(2, Math.round(w / 28));
+      let s = R(1,1,w-2,h-2,m*.1,c,'#9BB7C9');
+      for (let i = 0; i < n; i++) s += R(w*(i+.15)/n, h*.15, w*.7/n, h*.7, Math.min(w*.3/n, h*.2), cols[i%5], null);
+      return s; }
+    case 'kickboard': return R(1,1,w-2,h-2,m*.32,c,sk) + `<ellipse cx="${w/2}" cy="${h*.27}" rx="${w*.2}" ry="${h*.1}" fill="#fff" stroke="${sk}" stroke-width="${sw*.6}"/>`;
+    case 'noodle': return R(0,0,w,h,h/2,c,sk) + L(h/2,h/2,w-h/2,h/2,lt,Math.max(1,h*.2));
+    case 'ring': return `<circle cx="${w/2}" cy="${h/2}" r="${m*.36}" fill="none" stroke="${sk}" stroke-width="${m*.26}"/><circle cx="${w/2}" cy="${h/2}" r="${m*.36}" fill="none" stroke="${c}" stroke-width="${m*.2}"/><circle cx="${w/2}" cy="${h/2}" r="${m*.36}" fill="none" stroke="${lt}" stroke-width="${m*.05}" stroke-dasharray="${m*.3} ${m*.6}"/>`;
+    case 'toybox': { let s = R(1,1,w-2,h-2,m*.12,c,sk) + R(w*.08,h*.12,w*.84,h*.76,m*.08,shade(c,.3),null);
+      [['#E5636A',.25,.35],['#86C0DF',.5,.6],['#8CCB9B',.72,.35],['#F0B662',.35,.68],['#9C7FD6',.75,.7]].forEach(([cc,fx,fy]) => s += `<circle cx="${w*fx}" cy="${h*fy}" r="${m*.13}" fill="${cc}"/>`);
+      return s; }
+    case 'changemat': { let s = R(1,1,w-2,h-2,m*.2,c,sk) + R(m*.1,m*.1,w-m*.2,h-m*.2,m*.14,'none',null,`stroke="${lt}" stroke-width="${sw}" stroke-dasharray="${sw*2} ${sw*2}"`);
+      for (let i = 1; i <= 3; i++) for (let j = 1; j <= 2; j++) s += `<circle cx="${w*i/4}" cy="${h*j/3}" r="${m*.035}" fill="${sk}" fill-opacity=".5"/>`;
+      return s; }
+    case 'changetable': return R(1,1,w-2,h-2,m*.06,'#E9D4B4','#C7A97F') + R(w*.08,h*.2,w*.84,h*.7,m*.14,c,sk) + L(2,2,w-2,2,'#C7A97F',sw*2.4) + L(2,2,2,h*.9,'#C7A97F',sw*2.4) + L(w-2,2,w-2,h*.9,'#C7A97F',sw*2.4);
+    case 'shower': return R(1,1,w-2,h-2,m*.08,'#EEF3F6','#B9CCD8') + `<circle cx="${w/2}" cy="${h*.62}" r="${m*.07}" fill="none" stroke="#9BB7C9" stroke-width="${sw}"/>`
+      + L(w/2,2,w/2,h*.18,'#9BB7C9',sw*1.2) + `<circle cx="${w/2}" cy="${h*.26}" r="${m*.13}" fill="${c}" stroke="#9BB7C9" stroke-width="${sw*.8}"/>`
+      + [-1,0,1].map(k => `<circle cx="${w/2+k*m*.05}" cy="${h*.26}" r="${m*.015}" fill="#4D98C4"/>`).join('');
+    case 'bench': return R(1,1,w-2,h-2,m*.15,c,sk) + L(w*.03,h/3,w*.97,h/3,sk,sw*.8) + L(w*.03,h*2/3,w*.97,h*2/3,sk,sw*.8);
+    case 'deckchair': { let s = R(1,1,w-2,h-2,m*.12,c,'#9BB7C9') + R(w*.06,h*.03,w*.88,h*.3,m*.1,'#A9D2E8',null);
+      for (let k = .4; k < .97; k += .08) s += L(w*.1,h*k,w*.9,h*k,'#B9CCD8',sw*.7);
+      return s; }
+    case 'towel': { const cols = [c,'#F7C9C2','#8CCB9B','#F5D7A1'], n = Math.max(1, Math.round(w / 32)); let s = '';
+      for (let i = 0; i < n; i++) s += R(w*(i+.1)/n, h*.12, w*.8/n, h*.82, 2, cols[i%4], null, `stroke="${shade(cols[i%4],-.2)}" stroke-width="${sw*.6}"`);
+      return s + L(0,h*.12,w,h*.12,'#7D8B96',Math.max(1.5,h*.14)); }
+    case 'wetsign': return `<path d="M${w/2} ${h*.05} L${w*.96} ${h*.92} L${w*.04} ${h*.92} Z" fill="${c}" stroke="#B8901A" stroke-width="${sw}" stroke-linejoin="round"/>`
+      + `<text x="${w/2}" y="${h*.64}" text-anchor="middle" dominant-baseline="central" font-size="${h*.5}" font-weight="800" fill="#4A4F55">!</text>`;
+    case 'filter': return R(1,1,w-2,h-2,m*.08,'#DCE8F0','#9BB7C9') + `<circle cx="${w*.33}" cy="${h/2}" r="${m*.34}" fill="${c}" stroke="${sk}" stroke-width="${sw}"/><circle cx="${w*.33}" cy="${h/2}" r="${m*.12}" fill="${lt}"/>`
+      + R(w*.66,h*.25,w*.26,h*.5,m*.06,'#9BB7C9',null) + L(w*.5,h/2,w*.66,h/2,'#7D8B96',sw*1.5);
+    case 'chem': return `<circle cx="${w/2}" cy="${h/2}" r="${m/2-1}" fill="${c}" stroke="${sk}" stroke-width="${sw}"/><circle cx="${w/2}" cy="${h/2}" r="${m*.36}" fill="none" stroke="${lt}" stroke-width="${sw*.8}"/><circle cx="${w*.66}" cy="${h*.34}" r="${m*.1}" fill="#fff" stroke="${sk}" stroke-width="${sw*.6}"/>`;
+    case 'toilet': return R(w*.08,1,w*.84,h*.3,m*.12,c,'#9BB7C9') + `<ellipse cx="${w/2}" cy="${h*.63}" rx="${w*.42}" ry="${h*.35}" fill="${c}" stroke="#9BB7C9" stroke-width="${sw}"/><ellipse cx="${w/2}" cy="${h*.66}" rx="${w*.26}" ry="${h*.22}" fill="#E7F3FA" stroke="#B9CCD8" stroke-width="${sw*.6}"/>`;
+    case 'sink': return R(1,1,w-2,h-2,m*.12,c,'#9BB7C9') + `<ellipse cx="${w/2}" cy="${h*.58}" rx="${w*.34}" ry="${h*.3}" fill="#E7F3FA" stroke="#B9CCD8" stroke-width="${sw*.8}"/><circle cx="${w/2}" cy="${h*.58}" r="${m*.05}" fill="#9BB7C9"/>` + L(w/2,h*.08,w/2,h*.26,'#7D8B96',sw*1.5);
+    case 'hairdryer': return R(1,1,w-2,h-2,m*.2,c,sk) + `<circle cx="${w*.3}" cy="${h/2}" r="${m*.28}" fill="#fff" stroke="${sk}" stroke-width="${sw}"/>` + R(w*.48,h*.38,w*.4,h*.24,h*.1,'#4A4F55',null);
+    case 'desk': return R(1,1,w-2,h-2,m*.06,c,sk) + R(w*.7,h*.1,w*.25,h*.8,m*.04,'none',null,`stroke="${shade(c,-.2)}" stroke-width="${sw*.8}"`) + L(w*.74,h*.5,w*.91,h*.5,shade(c,-.2),sw*.8);
+    case 'desk_l': return `<path d="M1 1H${w-1}V${h*.45}H${w*.45}V${h-1}H1Z" fill="${c}" stroke="${sk}" stroke-width="${sw}" stroke-linejoin="round"/><path d="M${w*.06} ${h*.06}H${w*.94}V${h*.39}H${w*.39}V${h*.94}H${w*.06}Z" fill="none" stroke="${lt}" stroke-width="${sw*.8}" stroke-linejoin="round"/>`;
+    case 'ochair': { let s = ''; for (let i = 0; i < 5; i++) { const t = (i*72 - 90) * Math.PI / 180; s += L(w/2,h/2,w/2+Math.cos(t)*m*.47,h/2+Math.sin(t)*m*.47,'#9BB7C9',sw*1.2) + `<circle cx="${w/2+Math.cos(t)*m*.47}" cy="${h/2+Math.sin(t)*m*.47}" r="${m*.05}" fill="#7D8B96"/>`; }
+      return s + `<circle cx="${w/2}" cy="${h*.55}" r="${m*.33}" fill="${c}" stroke="${sk}" stroke-width="${sw}"/>` + R(w*.2,h*.04,w*.6,h*.2,h*.1,sk,null); }
+    case 'computer': return R(w*.12,h*.04,w*.76,h*.16,2,c,null) + R(w*.42,h*.2,w*.16,h*.12,1,'#7D8B96',null) + R(w*.1,h*.52,w*.8,h*.32,3,'#DCE3E8','#9BB7C9')
+      + [.62,.72].map(k => L(w*.15,h*k,w*.85,h*k,'#B9C3CB',sw*.6)).join('') + `<ellipse cx="${w*.95}" cy="${h*.68}" rx="${w*.04}" ry="${h*.09}" fill="#DCE3E8" stroke="#9BB7C9" stroke-width="${sw*.6}"/>`;
+    case 'laptop': return R(1,1,w-2,h-2,m*.1,c,sk) + R(w*.1,h*.15,w*.8,h*.45,1,'#fff',null,`fill-opacity=".6"`) + R(w*.3,h*.7,w*.4,h*.18,1,lt,null) + L(2,2,w-2,2,'#4A4F55',sw*1.5);
+    case 'printer': return R(1,h*.15,w-2,h*.83,m*.12,c,sk) + R(w*.22,1,w*.56,h*.3,1,'#fff','#B9C3CB') + L(w*.2,h*.78,w*.8,h*.78,'#4A4F55',sw*1.5) + `<circle cx="${w*.82}" cy="${h*.45}" r="${m*.05}" fill="#4FB487"/>`;
+    case 'phone': return R(1,1,w-2,h-2,m*.18,c,null) + R(w*.06,h*.1,w*.3,h*.8,m*.15,shade(c,.25),null) + [0,1,2].map(r => [0,1].map(k => `<circle cx="${w*(.55+k*.22)}" cy="${h*(.28+r*.22)}" r="${m*.05}" fill="#fff"/>`).join('')).join('');
+    case 'pos': return R(1,1,w-2,h-2,m*.12,c,null) + R(w*.12,h*.08,w*.76,h*.36,2,'#A9D2E8',null) + [0,1].map(r => [0,1,2].map(k => `<circle cx="${w*(.3+k*.2)}" cy="${h*(.6+r*.18)}" r="${m*.045}" fill="#fff"/>`).join('')).join('');
+    case 'filing': return R(1,1,w-2,h-2,m*.06,c,sk) + L(2,h-2,w-2,h-2,sk,sw*2.4) + R(w*.35,h-sw*2.5,w*.3,sw*2,1,'#4A4F55',null) + L(w*.1,h*.33,w*.9,h*.33,lt,sw*.7) + L(w*.1,h*.66,w*.9,h*.66,lt,sw*.7);
+    case 'storage': return R(1,1,w-2,h-2,m*.05,c,sk) + L(2,2,w-2,h-2,shade(c,-.15),sw*.7) + L(w-2,2,2,h-2,shade(c,-.15),sw*.7) + L(2,h-2,w-2,h-2,sk,sw*2.2) + L(w/2,h*.75,w/2,h-2,sk,sw);
+    case 'display': return R(1,1,w-2,h-2,m*.05,c,'#86C0DF') + `<circle cx="${w*.25}" cy="${h/2}" r="${m*.15}" fill="#F0B662"/>` + R(w*.43,h*.32,w*.14,h*.36,2,'#8CCB9B',null) + `<circle cx="${w*.75}" cy="${h/2}" r="${m*.15}" fill="#E5636A" fill-opacity=".8"/>` + L(w*.08,h*.85,w*.3,h*.15,'#fff',sw*1.2);
+    case 'bookshelf': { const cols = ['#86C0DF','#F0B662','#E5636A','#8CCB9B','#9C7FD6','#4D98C4'], n = Math.max(3, Math.round(w / 9)); let s = R(1,1,w-2,h-2,m*.06,c,sk);
+      for (let i = 0; i < n; i++) s += R(w*.04 + (w*.92)*i/n, h*.15, (w*.92)/n*.82, h*.7, 1, cols[(i*7)%6], null);
+      return s; }
+    case 'safe': return R(1,1,w-2,h-2,m*.1,c,sk) + `<circle cx="${w/2}" cy="${h/2}" r="${m*.2}" fill="#C9D3DA" stroke="${sk}" stroke-width="${sw}"/>` + L(w/2,h/2,w/2+m*.14,h/2-m*.08,'#4A4F55',sw);
+    case 'desksign': return R(1,1,w-2,h-2,1,c,sk) + L(2,h/2,w-2,h/2,lt,Math.max(1,h*.15));
+    case 'standee': return R(w*.05,h*.45,w*.9,h*.5,h*.15,'#C9D3DA','#9BB7C9') + R(0,h*.15,w,h*.3,1,c,sk);
+    case 'whiteboard': return R(0,0,w,h,1,c,'#9BB7C9') + L(w*.04,h-1,w*.96,h-1,'#7D8B96',Math.max(1.5,h*.25));
+    case 'noticeboard': { let s = R(0,0,w,h,1,c,'#B9824A'); const cols = ['#E5636A','#4D98C4','#4FB487','#F0B662'];
+      for (let i = 0; i < 4; i++) s += `<circle cx="${w*(.15+i*.23)}" cy="${h/2}" r="${Math.max(1.5,h*.22)}" fill="${cols[i]}"/>`; return s; }
+    case 'brochure': return R(1,1,w-2,h-2,m*.1,c,sk) + [['#86C0DF',.1],['#F0B662',.4],['#8CCB9B',.7]].map(([cc,fx]) => R(w*fx,h*.15,w*.22,h*.7,1,cc,null)).join('');
+    case 'clock': return `<circle cx="${w/2}" cy="${h/2}" r="${m/2-1}" fill="${c}" stroke="${sk === c ? '#7D8B96' : '#7D8B96'}" stroke-width="${sw*1.2}"/>` + L(w/2,h/2,w/2,h*.2,'#4A4F55',sw) + L(w/2,h/2,w*.72,h/2,'#4A4F55',sw);
+    case 'cctv': return `<path d="M${w/2} ${h/2} L${w*1.6} ${h*1.9} L${-w*.6} ${h*1.9} Z" fill="${c}" fill-opacity=".14"/><circle cx="${w/2}" cy="${h/2}" r="${m*.42}" fill="#fff" stroke="#9BB7C9" stroke-width="${sw}"/><circle cx="${w/2}" cy="${h*.58}" r="${m*.17}" fill="#3E464D"/>`;
+    case 'sanitizer': return R(w*.18,h*.25,w*.64,h*.72,m*.12,'#fff','#9BB7C9') + R(w*.3,h*.45,w*.4,h*.4,m*.06,c,null,`fill-opacity=".7"`) + R(w*.38,0,w*.24,h*.3,1,'#7D8B96',null);
+    case 'lamp': return `<circle cx="${w/2}" cy="${h/2}" r="${m*.46}" fill="${c}" fill-opacity=".35" stroke="${sk}" stroke-width="${sw}"/><circle cx="${w/2}" cy="${h/2}" r="${m*.16}" fill="${c}"/>`;
+    case 'mirror': return R(0,0,w,h,1,c,'#9BB7C9') + L(w*.2,h*.8,w*.3,h*.2,'#fff',Math.max(1,h*.15)) + L(w*.6,h*.8,w*.68,h*.2,'#fff',Math.max(1,h*.15));
     case 'wall': return R(0,0,w,h,1,c,null);
     case 'door': { const t = Math.max(3, w*.06);
       return `<path d="M0 ${h} L0 0 A${w} ${h} 0 0 1 ${w} ${h} Z" fill="${c}" fill-opacity=".12" stroke="${sk}" stroke-width="${sw*.7}" stroke-dasharray="${sw*3} ${sw*2}"/>` + R(0,0,t,h,1,c,sk) + L(0,h,w,h,'#fff',Math.max(6,t*1.4)); }
@@ -441,6 +580,7 @@ function drawShape(type, w, h, c, o = {}) {
 }
 function previewSvg(type, color, name) {
   const t = TYPES[type] || TYPES.rect; let w = t.w, h = t.h;
+  if (w / h > 4) h = w / 4; else if (h / w > 4) w = h / 4;
   if (type === 'text') return `<svg viewBox="0 0 46 34"><text x="23" y="19" text-anchor="middle" dominant-baseline="central" font-size="20" font-weight="700" fill="#4A4F55" font-family="Mali,sans-serif">Aa</text></svg>`;
   const pd = Math.max(w, h) * .08;
   return `<svg viewBox="${-pd} ${-pd} ${w + pd*2} ${h + pd*2}" preserveAspectRatio="xMidYMid meet">${drawShape(type, w, h, color || t.c, {name: name || ''})}</svg>`;
@@ -451,7 +591,7 @@ const DEF_SETTINGS = {apiKey:'', model:'gpt-4o-mini', baseUrl:'https://api.opena
 let settings = Object.assign({}, DEF_SETTINGS, load(LS.settings, {}));
 let plans = load(LS.plans, null);
 let records = load(LS.records, {});
-if (!Array.isArray(plans) || !plans.length) { plans = [samplePlan()]; store(LS.plans, plans); }
+if (!Array.isArray(plans) || !plans.length) { plans = [samplePlan(), samplePoolPlan()]; store(LS.plans, plans); }
 let curPlanId = load(LS.cur, plans[0].id);
 if (!plans.find(p => p.id === curPlanId)) curPlanId = plans[0].id;
 let mode = 'inspect', viewDate = today(), sel = null, view = {tx:0, ty:0, s:1};
@@ -512,6 +652,45 @@ function samplePlan() {
   add('text', 'LOBBY', 120, 150, {w:180, h:40, color:'#86C0DF'});
   return {id: uid(), name: 'ล็อบบี้ชั้น 1', w: 1000, h: 700, grid: 25, floor: '#FFFFFF', objects: o};
 }
+function samplePoolPlan() {
+  const o = [];
+  const add = (type, name, x, y, ex = {}) => { const ob = mk(type, x, y, Object.assign({name}, ex)); o.push(ob); return ob; };
+  add('pool', 'สระหลัก', 100, 120, {w: 1000, h: 500});
+  add('kidpool', 'สระเด็ก', 1220, 140, {w: 300, h: 300});
+  add('zone', 'โซนเปลี่ยนชุด', 60, 760, {w: 760, h: 220, color: '#F0B662'});
+  add('ladder', 'บันไดสระ 1', 170, 100);
+  add('ladder', 'บันไดสระ 2', 970, 100);
+  add('lifeguard', 'เก้าอี้ไลฟ์การ์ด', 1125, 520);
+  add('buoy', 'ห่วงชูชีพ 1', 30, 330);
+  add('buoy', 'ห่วงชูชีพ 2', 1137, 300);
+  add('wetsign', 'ป้ายระวังพื้นลื่น', 600, 650);
+  add('equip', 'ชั้นวางอุปกรณ์ว่ายน้ำ', 900, 660, {w: 150});
+  add('toybox', 'กล่องของเล่นน้ำ', 1250, 500);
+  add('ring', 'ห่วงพยุง', 1340, 500);
+  add('deckchair', 'เตียงริมสระ 1', 1420, 480, {rot: 0});
+  add('bench', 'ม้านั่งรอผู้ปกครอง', 100, 680);
+  add('changemat', 'เบาะเปลี่ยนชุด 1', 90, 800);
+  add('changemat', 'เบาะเปลี่ยนชุด 2', 230, 800);
+  add('changemat', 'เบาะเปลี่ยนชุด 3', 370, 800);
+  add('changetable', 'โต๊ะเปลี่ยนผ้าอ้อม', 520, 800);
+  add('hairdryer', 'จุดเป่าผม', 650, 815);
+  add('locker', 'ล็อกเกอร์ 1', 90, 925, {w: 160});
+  add('locker', 'ล็อกเกอร์ 2', 270, 925, {w: 160});
+  add('towel', 'ราวตากผ้าเช็ดตัว', 460, 945);
+  add('mirror', 'กระจกเงา', 620, 990);
+  add('shower', 'ฝักบัว 1', 880, 900);
+  add('shower', 'ฝักบัว 2', 975, 900);
+  add('toilet', 'ห้องน้ำ (ชักโครก)', 1090, 915);
+  add('sink', 'อ่างล้างมือ', 1160, 935);
+  add('filter', 'เครื่องกรองน้ำสระ', 1440, 900);
+  add('chem', 'ถังคลอรีน', 1380, 940);
+  add('door', 'ประตูเข้าห้องสระ', 0, 560, {rot: 90});
+  add('fire', 'ถังดับเพลิง', 15, 680);
+  add('clock', 'นาฬิกา', 600, 4);
+  add('cctv', 'กล้องวงจรปิด', 1560, 10);
+  add('wetsign', 'ป้ายระวังพื้นลื่น 2', 860, 840);
+  return {id: uid(), name: 'สระว่ายน้ำ', w: 1600, h: 1000, grid: 25, floor: '#F4F9FC', objects: o};
+}
 
 /* ---------- undo ---------- */
 function snap() { const p = plan(); return JSON.stringify({w:p.w, h:p.h, grid:p.grid, floor:p.floor, objects:p.objects}); }
@@ -542,7 +721,7 @@ function statusOf(o, recs, carried) {
 
 /* ---------- render ---------- */
 const svg = $('#plan');
-function sortedObjs(p) { return p.objects.slice().sort((a, b) => (b.type === 'zone' || b.type === 'mat') - (a.type === 'zone' || a.type === 'mat')); }
+function sortedObjs(p) { return p.objects.slice().sort((a, b) => FLOOR_TYPES.has(b.type) - FLOOR_TYPES.has(a.type)); }
 function bbox(o) {
   const t = (o.rot || 0) * Math.PI / 180, c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t));
   return {cx: o.x + o.w/2, cy: o.y + o.h/2, hw: (o.w*c + o.h*s)/2, hh: (o.w*s + o.h*c)/2};
@@ -573,7 +752,7 @@ function sceneSvg(s, opt = {}) {
       const c = STATUS[st.st].hex;
       ring = `<rect x="${-6}" y="${-6}" width="${o.w+12}" height="${o.h+12}" rx="10" fill="${c}" fill-opacity="${st.carried ? .08 : .16}" stroke="${c}" stroke-width="${2.5*px}" ${st.carried ? `stroke-dasharray="${6*px} ${4*px}"` : ''}/>`;
     }
-    objs += `<g data-id="${o.id}" class="obj" transform="translate(${o.x} ${o.y}) rotate(${o.rot || 0} ${o.w/2} ${o.h/2})" ${dim ? 'style="pointer-events:none" opacity=".55"' : ''} ${o.type !== 'zone' && o.type !== 'text' && o.type !== 'mat' ? 'filter="url(#sh)"' : ''}>${ring}${drawShape(o.type, o.w, o.h, o.color || t.c, o)}<rect x="0" y="0" width="${o.w}" height="${o.h}" fill="transparent"/></g>`;
+    objs += `<g data-id="${o.id}" class="obj" transform="translate(${o.x} ${o.y}) rotate(${o.rot || 0} ${o.w/2} ${o.h/2})" ${dim ? 'style="pointer-events:none" opacity=".55"' : ''} ${!FLAT_TYPES.has(o.type) ? 'filter="url(#sh)"' : ''}>${ring}${drawShape(o.type, o.w, o.h, o.color || t.c, o)}<rect x="0" y="0" width="${o.w}" height="${o.h}" fill="transparent"/></g>`;
     const b = bbox(o);
     // labels
     if (settings.showLabels && !opt.noLabels && o.type !== 'text' && o.type !== 'zone') {
@@ -999,7 +1178,7 @@ function openPlanPanel() {
     <div class="lbl"><span>วัตถุในผัง (แตะเพื่อเลือก)</span></div>
     <div class="objlist">${p.objects.map(o => `<button data-id="${o.id}">${previewSvg(o.type, o.color)}<span>${esc(o.name)}</span><small>${o.inspect !== false ? '✓ ตรวจ' : ''}${o.locked ? ' 🔒' : ''}</small></button>`).join('') || '<div class="empty">ยังไม่มีวัตถุ — แตะไอคอนด้านซ้ายเพื่อเพิ่ม</div>'}</div>
     <div class="lbl">จัดการผัง</div>
-    <div class="row"><button class="btn sm" id="plNew">＋ ผังใหม่</button><button class="btn sm" id="plDup">⧉ ทำสำเนาผัง</button><button class="btn sm ghost" id="plClear">ล้างวัตถุทั้งหมด</button><button class="btn sm danger" id="plDel" ${plans.length < 2 ? 'disabled' : ''}>ลบผังนี้</button></div>
+    <div class="row"><button class="btn sm" id="plNew">＋ ผังใหม่</button><button class="btn sm" id="plPool">＋ ผังตัวอย่างสระว่ายน้ำ</button><button class="btn sm" id="plDup">⧉ ทำสำเนาผัง</button><button class="btn sm ghost" id="plClear">ล้างวัตถุทั้งหมด</button><button class="btn sm danger" id="plDel" ${plans.length < 2 ? 'disabled' : ''}>ลบผังนี้</button></div>
   </div>`;
   showDrawer('plan', html);
   $('#plName').oninput = e => { p.name = e.target.value; savePlans(); fillPlanSel(); drawerEl.querySelector('.dh h2').textContent = e.target.value; renderBottom(); };
@@ -1010,6 +1189,7 @@ function openPlanPanel() {
   $('#plNew').onclick = () => promptBox('ชื่อผังใหม่', 'เช่น ล็อบบี้ชั้น 2, ห้องรอผู้ปกครอง', 'ผังใหม่', name => {
     const np = {id: uid(), name: name || 'ผังใหม่', w: 800, h: 600, grid: 25, floor: '#FFFFFF', objects: [mk('door', 355, 510, {name: 'ประตู'})]};
     touchPlan(np); plans.push(np); switchPlan(np.id); toast('สร้างผังใหม่แล้ว — เพิ่มของจากแถบด้านซ้าย หรือใช้ ✨ AI จัดผัง', 'ok', 3500); });
+  $('#plPool').onclick = () => { const np = samplePoolPlan(); touchPlan(np); plans.push(np); switchPlan(np.id); toast('เพิ่มผังตัวอย่างสระว่ายน้ำแล้ว — ปรับให้ตรงกับสถานที่จริงได้เลย', 'ok', 3500); };
   $('#plDup').onclick = () => { const np = JSON.parse(JSON.stringify(p)); np.id = uid(); np.name = p.name + ' (สำเนา)'; touchPlan(np); plans.push(np); switchPlan(np.id); toast('ทำสำเนาผังแล้ว (ไม่รวมประวัติการตรวจ)', 'ok'); };
   $('#plClear').onclick = () => confirmBox('ล้างวัตถุทั้งหมดในผังนี้?', 'ประวัติการตรวจยังอยู่ และกด “ย้อนกลับ” ได้', 'ล้างทั้งหมด', () => { pushUndo(); p.objects = []; sel = null; savePlans(); render(); openPlanPanel(); }, true);
   $('#plDel').onclick = () => confirmBox(`ลบผัง “${p.name}”?`, 'ประวัติการตรวจของผังนี้จะถูกลบด้วย และย้อนกลับไม่ได้', 'ลบผัง', () => {
@@ -1212,7 +1392,8 @@ function layoutSystemPrompt() {
 ทิศทาง: เก้าอี้ rot=0 พนักพิงอยู่ด้านบน หันหน้าลง; rot=180 หันหน้าขึ้น; rot=90 หันหน้าไปทางซ้าย; rot=270 หันหน้าไปทางขวา
 โซฟา/ตู้/ล็อกเกอร์/ชั้นวาง rot=0 ด้านหลังอยู่ด้านบน (ชิดผนังด้านบน); ถ้าชิดผนังซ้ายให้ rot=270 ชิดผนังขวาให้ rot=90 ชิดผนังล่างให้ rot=180
 ประตู: กล่อง w×h บานพับมุมซ้ายล่าง ขอบล่างของกล่องคือแนวผนัง (rot=0 สำหรับผนังด้านล่าง)
-ของติดผนัง (ป้าย ทีวี หน้าต่าง แอร์) วางชิดผนังโดยให้ด้านยาวขนานผนัง
+ของติดผนัง (ป้าย ทีวี หน้าต่าง แอร์ ไวท์บอร์ด บอร์ดประกาศ กระจกเงา) วางชิดผนังโดยให้ด้านยาวขนานผนัง
+สระว่ายน้ำ/สระเด็กเป็นพื้นที่ใหญ่ วางของอื่นทับสระไม่ได้ ยกเว้นบันไดสระ (วางคร่อมขอบสระ) และเชือกกั้นลู่ (วางในสระ) เว้นทางเดินรอบสระอย่างน้อย 120 ซม.
 ชนิดที่ใช้ได้ (type: ชื่อ ขนาดมาตรฐาน w×h):
 ${Object.entries(TYPES).map(([k, v]) => `${k}: ${v.n} ${v.w}×${v.h}`).join('\n')}
 ตอบกลับเป็น JSON object เท่านั้น รูปแบบ:
@@ -1373,7 +1554,7 @@ async function signOut() {
   if (fb.auth) await fb.auth.signOut();
 }
 function isUntouchedLocal() {
-  return !Object.keys(records).some(pid => Object.keys(records[pid] || {}).length) && plans.length === 1 && !plans[0].u;
+  return !Object.keys(records).some(pid => Object.keys(records[pid] || {}).length) && plans.every(p => !p.u);
 }
 async function onSignedIn() {
   setSync('syncing');
@@ -1445,7 +1626,7 @@ function applyRemote(col, doc) {
     const k = 'p:' + id; if (syncMeta.outbox[k] && syncMeta.outbox[k] <= ru) delete syncMeta.outbox[k];
     if (d.deleted) { syncMeta.dead[id] = ru; if (i < 0) return false; plans.splice(i, 1); delete records[id]; return true; }
     delete syncMeta.dead[id];
-    const p = {id, name: d.name || 'ผัง', w: d.w || 1000, h: d.h || 700, grid: d.grid || 25, floor: d.floor || '#FFFFFF', objects: Array.isArray(d.objects) ? d.objects : [], u: ru};
+    const p = {id, name: d.name || 'ผัง', w: d.w || 1000, h: d.h || 700, grid: d.grid || 25, floor: d.floor || '#FFFFFF', objects: Array.isArray(d.objects) ? d.objects : [], ord: d.ord ?? 999, u: ru};
     if (i < 0) plans.push(p); else plans[i] = p;
     return true;
   }
@@ -1464,6 +1645,8 @@ function applyRemote(col, doc) {
   return true;
 }
 function afterRemote() {
+  plans.forEach((p, i) => { if (p.ord == null) p.ord = 1000 + i; });
+  plans.sort((a, b) => a.ord - b.ord);
   store(LS.plans, plans); saveRecords();
   if (!plans.length) { const np = {id: uid(), name: 'ผังใหม่', w: 800, h: 600, grid: 25, floor: '#FFFFFF', objects: []}; plans.push(np); curPlanId = np.id; touchPlan(np); store(LS.plans, plans); }
   if (!plan()) { curPlanId = plans[0].id; store(LS.cur, curPlanId); sel = null; undoStack = []; redoStack = []; updTools(); if (drawer && drawer.kind !== 'issues' && drawer.kind !== 'history') closeDrawer(); }
@@ -1487,7 +1670,7 @@ async function flush() {
       const id = k.slice(2); let ref, data;
       if (k[0] === 'p') {
         const p = plans.find(x => x.id === id); ref = fb.db.collection('plans').doc(id);
-        data = p ? clean({name: p.name, w: p.w, h: p.h, grid: p.grid || 25, floor: p.floor || '#FFFFFF', objects: p.objects, u: p.u || v, deleted: false})
+        data = p ? clean({name: p.name, w: p.w, h: p.h, grid: p.grid || 25, floor: p.floor || '#FFFFFF', objects: p.objects, ord: plans.indexOf(p), u: p.u || v, deleted: false})
                  : {deleted: true, u: syncMeta.dead[id] || v};
       } else {
         const [pid, date, oid] = id.split('__'), r = ((records[pid] || {})[date] || {})[oid]; ref = fb.db.collection('records').doc(id);
@@ -1577,9 +1760,13 @@ function setMode(m) {
   render(); fit();
 }
 function buildPalette() {
-  $('#palette').innerHTML = GROUPS.map(([g, gn]) => `<h4>${gn}</h4>` + Object.entries(TYPES).filter(([, v]) => v.g === g)
-    .map(([k, v]) => `<button data-t="${k}" title="เพิ่ม${v.n}">${previewSvg(k)}<span>${v.n}</span></button>`).join('')).join('');
+  const closed = settings.palClosed || ['e', 's', 'b'];
+  $('#palette').innerHTML = GROUPS.map(([g, gn]) => `<div class="pg ${closed.includes(g) ? 'closed' : ''}" data-g="${g}"><h4 role="button" tabindex="0">${gn}<i>▾</i></h4><div class="pi">` +
+    Object.entries(TYPES).filter(([, v]) => v.g === g).map(([k, v]) => `<button data-t="${k}" title="เพิ่ม${v.n}">${previewSvg(k)}<span>${v.n}</span></button>`).join('') + '</div></div>').join('');
   document.querySelectorAll('#palette button').forEach(b => b.onclick = () => addObject(b.dataset.t));
+  document.querySelectorAll('#palette h4').forEach(h => h.onclick = () => {
+    const pg = h.parentElement; pg.classList.toggle('closed');
+    settings.palClosed = [...document.querySelectorAll('#palette .pg.closed')].map(x => x.dataset.g); saveSettings(); });
 }
 $('#mInspect').onclick = () => setMode('inspect');
 $('#mEdit').onclick = () => setMode('edit');
