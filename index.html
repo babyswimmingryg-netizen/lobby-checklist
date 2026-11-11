@@ -53,6 +53,9 @@ h1,h2,h3{font-family:var(--head);margin:0;font-weight:700}
 .ib svg{width:20px;height:20px;flex:none}
 .ib .cnt{position:absolute;top:-6px;right:-6px;background:var(--repair);color:#fff;border-radius:10px;font-size:11px;min-width:20px;height:20px;line-height:20px;padding:0 5px;border:2px solid #fff}
 .ib .cnt:empty{display:none}
+.ib .sdot{position:absolute;right:5px;bottom:5px;width:10px;height:10px;border-radius:50%;background:var(--sc,#B9C3CB);border:2px solid #fff}
+.ib.spin-dot .sdot{animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
 
 /* ---------- stage ---------- */
 main{position:relative;overflow:hidden;min-height:0}
@@ -272,6 +275,7 @@ body.drawer-open .legend{display:none}
     <button class="ib" id="bIssues" title="งานค้าง / ต้องดำเนินการ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg><span class="tx">งานค้าง</span><span class="cnt" id="issueCnt"></span></button>
     <button class="ib" id="bHistory" title="ประวัติย้อนหลัง"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/></svg><span class="tx">ประวัติ</span></button>
     <button class="ib" id="bReport" title="รายงานประจำวัน"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg><span class="tx">รายงาน</span></button>
+    <button class="ib" id="bSync" title="ซิงก์ข้อมูล"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H7a5 5 0 1 1 1.6-9.7A6 6 0 0 1 20 11.5a3.8 3.8 0 0 1-2.5 7.5z"/></svg><span class="sdot"></span></button>
     <button class="ib" id="bSettings" title="ตั้งค่า"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
   </div>
 </header>
@@ -458,7 +462,7 @@ let flashId = null, flashT = 0;
 const plan = () => plans.find(p => p.id === curPlanId);
 const getObj = id => plan().objects.find(o => o.id === id);
 const inspectable = o => o.inspect !== false && !(TYPES[o.type] || {}).noInspectHard;
-const savePlans = () => store(LS.plans, plans);
+function savePlans() { const p = plan(); if (p) touchPlan(p); return store(LS.plans, plans); }
 const saveRecords = () => store(LS.records, records);
 const saveSettings = () => store(LS.settings, settings);
 function dayRecs(date = viewDate, pid = curPlanId) { return ((records[pid] || {})[date]) || {}; }
@@ -468,6 +472,7 @@ function setRec(date, id, rec) {
   records[curPlanId][date] = records[curPlanId][date] || {};
   if (rec) records[curPlanId][date][id] = rec; else delete records[curPlanId][date][id];
   if (!Object.keys(records[curPlanId][date]).length) delete records[curPlanId][date];
+  touchRec(curPlanId, date, id);
   return saveRecords();
 }
 
@@ -669,7 +674,7 @@ function markRestOk() {
   confirmBox(`บันทึก ${list.length} จุดที่ยังไม่ได้ตรวจว่า "ปกติ" ทั้งหมด?`, 'จุดที่มีงานค้างจากวันก่อนจะไม่ถูกบันทึก ต้องตรวจทีละจุด', 'บันทึกว่าปกติ', () => {
     const time = new Date().toISOString();
     list.forEach(o => { records[curPlanId] = records[curPlanId] || {}; records[curPlanId][viewDate] = records[curPlanId][viewDate] || {};
-      records[curPlanId][viewDate][o.id] = {status:'ok', prio:'normal', items:(o.checklist || []).slice(), done:(o.checklist || []).map(() => true), note:'', photo:'', by:settings.inspector, time, name:o.name, type:o.type, quick:true}; });
+      records[curPlanId][viewDate][o.id] = {status:'ok', prio:'normal', items:(o.checklist || []).slice(), done:(o.checklist || []).map(() => true), note:'', photo:'', by:settings.inspector, time, name:o.name, type:o.type, quick:true}; touchRec(curPlanId, viewDate, o.id); });
     saveRecords(); render(); toast(`บันทึก ${list.length} จุดแล้ว`, 'ok');
   });
 }
@@ -1004,14 +1009,14 @@ function openPlanPanel() {
   drawerEl.querySelectorAll('.objlist button').forEach(b => b.onclick = () => { sel = b.dataset.id; const o = getObj(sel); ensureVisible(o); render(); openProps(); flash(sel); });
   $('#plNew').onclick = () => promptBox('ชื่อผังใหม่', 'เช่น ล็อบบี้ชั้น 2, ห้องรอผู้ปกครอง', 'ผังใหม่', name => {
     const np = {id: uid(), name: name || 'ผังใหม่', w: 800, h: 600, grid: 25, floor: '#FFFFFF', objects: [mk('door', 355, 510, {name: 'ประตู'})]};
-    plans.push(np); switchPlan(np.id); toast('สร้างผังใหม่แล้ว — เพิ่มของจากแถบด้านซ้าย หรือใช้ ✨ AI จัดผัง', 'ok', 3500); });
-  $('#plDup').onclick = () => { const np = JSON.parse(JSON.stringify(p)); np.id = uid(); np.name = p.name + ' (สำเนา)'; plans.push(np); switchPlan(np.id); toast('ทำสำเนาผังแล้ว (ไม่รวมประวัติการตรวจ)', 'ok'); };
+    touchPlan(np); plans.push(np); switchPlan(np.id); toast('สร้างผังใหม่แล้ว — เพิ่มของจากแถบด้านซ้าย หรือใช้ ✨ AI จัดผัง', 'ok', 3500); });
+  $('#plDup').onclick = () => { const np = JSON.parse(JSON.stringify(p)); np.id = uid(); np.name = p.name + ' (สำเนา)'; touchPlan(np); plans.push(np); switchPlan(np.id); toast('ทำสำเนาผังแล้ว (ไม่รวมประวัติการตรวจ)', 'ok'); };
   $('#plClear').onclick = () => confirmBox('ล้างวัตถุทั้งหมดในผังนี้?', 'ประวัติการตรวจยังอยู่ และกด “ย้อนกลับ” ได้', 'ล้างทั้งหมด', () => { pushUndo(); p.objects = []; sel = null; savePlans(); render(); openPlanPanel(); }, true);
   $('#plDel').onclick = () => confirmBox(`ลบผัง “${p.name}”?`, 'ประวัติการตรวจของผังนี้จะถูกลบด้วย และย้อนกลับไม่ได้', 'ลบผัง', () => {
-    plans = plans.filter(x => x.id !== p.id); delete records[p.id]; savePlans(); saveRecords(); switchPlan(plans[0].id); }, true);
+    plans = plans.filter(x => x.id !== p.id); delete records[p.id]; syncMeta.dead[p.id] = Date.now(); enqueue('p:' + p.id, syncMeta.dead[p.id]); store(LS.plans, plans); saveRecords(); switchPlan(plans[0].id); }, true);
 }
 function switchPlan(id) {
-  curPlanId = id; store(LS.cur, id); savePlans(); sel = null; undoStack = []; redoStack = []; updTools(); fillPlanSel();
+  curPlanId = id; store(LS.cur, id); store(LS.plans, plans); sel = null; undoStack = []; redoStack = []; updTools(); fillPlanSel();
   if (drawer) { if (mode === 'edit') openPlanPanel(); else closeDrawer(); }
   fit();
 }
@@ -1041,7 +1046,7 @@ function openIssuesPanel(tab = 'all') {
   drawerEl.querySelectorAll('[data-fix]').forEach(b => b.onclick = () => promptBox('บันทึกการแก้ไข', 'รายละเอียดการแก้ไข (ไม่บังคับ) เช่น เปลี่ยนหลอดไฟใหม่แล้ว', '', note => {
     const r = records[curPlanId][b.dataset.d][b.dataset.fix];
     r.resolved = {date: today(), note: note || '', by: settings.inspector, time: new Date().toISOString()};
-    saveRecords(); render(); openIssuesPanel(tab); toast('ปิดงานเรียบร้อย ✓', 'ok');
+    touchRec(curPlanId, b.dataset.d, b.dataset.fix); saveRecords(); render(); openIssuesPanel(tab); toast('ปิดงานเรียบร้อย ✓', 'ok');
   }, true));
 }
 
@@ -1137,12 +1142,13 @@ function importBackup(file) {
     const d = JSON.parse(fr.result); if (!Array.isArray(d.plans) || !d.plans.length) throw 0;
     confirmBox('นำเข้าข้อมูลสำรอง?', `ข้อมูลปัจจุบันจะถูกแทนที่ด้วยไฟล์นี้ (${d.plans.length} ผัง)`, 'นำเข้า', () => {
       plans = d.plans; records = d.records || {}; if (d.settings) settings = Object.assign({}, settings, d.settings, {apiKey: settings.apiKey});
-      savePlans(); saveRecords(); saveSettings(); closeModal(); switchPlan(plans[0].id); applyLogo(); toast('นำเข้าข้อมูลแล้ว', 'ok');
+      store(LS.plans, plans); saveRecords(); saveSettings(); closeModal(); switchPlan(plans[0].id); applyLogo(); toast('นำเข้าข้อมูลแล้ว', 'ok');
+      if (fb.user) reconcileAll().then(flush).catch(e => setSync('error', fbErr(e)));
     });
   } catch (e) { toast('ไฟล์ไม่ถูกต้อง', 'err'); } };
   fr.readAsText(file);
 }
-function storageUsed() { let n = 0; for (const k of Object.values(LS)) n += (localStorage.getItem(k) || '').length; return n * 2; }
+function storageUsed() { let n = 0; for (const k of [...Object.values(LS), LS_SYNC]) n += (localStorage.getItem(k) || '').length; return n * 2; }
 
 /* ---------- settings ---------- */
 function openSettings() {
@@ -1158,6 +1164,8 @@ function openSettings() {
     <button class="btn sm" id="sTest">ทดสอบการเชื่อมต่อ</button> <span id="sTestR" class="muted"></span>
     <div class="lbl">โลโก้</div>
     <div class="row"><img src="${esc(settings.logo || LOGO_DEFAULT)}" style="height:44px;border-radius:8px;background:#fff"><label class="btn sm">เปลี่ยนโลโก้<input type="file" accept="image/*" id="sLogo" hidden></label>${settings.logo ? '<button class="btn sm ghost" id="sLogoRst">ใช้โลโก้เดิม</button>' : ''}</div>
+    <div class="lbl">ซิงก์ข้อมูลระหว่างเครื่อง</div>
+    <div class="row"><button class="btn sm" id="sSync">☁ ตั้งค่าการซิงก์ (Firebase)</button><span class="muted">${SYNC_TXT[fb.status]}</span></div>
     <div class="lbl">ข้อมูลในเครื่อง</div>
     <div class="muted">ใช้พื้นที่ประมาณ ${(used / 1024 / 1024).toFixed(2)} MB จาก ~5 MB</div>
     <div class="meter"><i style="width:${Math.min(100, used / cap * 100)}%;${used / cap > .8 ? 'background:var(--repair)' : ''}"></i></div>
@@ -1172,13 +1180,14 @@ function openSettings() {
     catch (e) { $('#sTestR').textContent = '❌ ' + e.message; } };
   $('#sLogo').onchange = async e => { const f = e.target.files[0]; if (!f) return; settings.logo = await compressImage(f, 300, .85).catch(() => ''); saveSettings(); applyLogo(); openSettings(); };
   const lr = $('#sLogoRst'); if (lr) lr.onclick = () => { settings.logo = ''; saveSettings(); applyLogo(); openSettings(); };
+  $('#sSync').onclick = openSync;
   $('#sBak').onclick = exportBackup; $('#sCsv').onclick = exportCSV;
   $('#sImp').onchange = e => e.target.files[0] && importBackup(e.target.files[0]);
   $('#sPhotos').onclick = () => { const lim = ymd(new Date(Date.now() - 60 * 864e5)); let n = 0;
-    for (const p of Object.values(records)) for (const [d, recs] of Object.entries(p)) if (d < lim) for (const r of Object.values(recs)) if (r.photo) { r.photo = ''; n++; }
+    for (const [pid, p] of Object.entries(records)) for (const [d, recs] of Object.entries(p)) if (d < lim) for (const [oid, r] of Object.entries(recs)) if (r.photo) { r.photo = ''; n++; touchRec(pid, d, oid); }
     saveRecords(); toast(`ลบรูปแล้ว ${n} รูป`, 'ok'); openSettings(); };
   $('#sWipe').onclick = () => confirmBox('ล้างข้อมูลทั้งหมด?', 'ผังและประวัติการตรวจทั้งหมดในเครื่องนี้จะถูกลบ แนะนำให้สำรองข้อมูลก่อน', 'ล้างข้อมูล', () => {
-    Object.values(LS).forEach(k => localStorage.removeItem(k)); location.reload(); }, true);
+    [...Object.values(LS), LS_SYNC].forEach(k => localStorage.removeItem(k)); location.reload(); }, true);
 }
 function applyLogo() { $('#logo').src = settings.logo || LOGO_DEFAULT; }
 
@@ -1285,15 +1294,267 @@ async function aiChecklist(o) {
   } catch (e) { toast(e.message, 'err', 4000); if (e.noKey) openSettings(); btn.disabled = false; btn.textContent = '✨ AI แนะนำ'; }
 }
 
+/* ---------- cloud sync (Firebase) ----------
+   ข้อมูลยังเก็บในเครื่องเหมือนเดิม และซิงก์ขึ้น Firestore เมื่อเข้าสู่ระบบ
+   plans/{planId}            = ผัง 1 ผัง
+   records/{plan__date__obj} = ผลตรวจ 1 จุดใน 1 วัน
+   ตัดสินข้อมูลที่ชนกันด้วยเวลาแก้ไขล่าสุด (u) */
+const FIREBASE_CONFIG = null; // ใส่ config ของ Firebase ที่นี่เพื่อให้ทุกเครื่องใช้ร่วมกัน (ค่านี้เปิดเผยได้ ความปลอดภัยอยู่ที่ Rules)
+const FB_VER = '10.12.2';
+const LS_SYNC = 'lbc.sync';
+let syncMeta = Object.assign({since: 0, linked: '', outbox: {}, dead: {}, last: 0}, load(LS_SYNC, {}));
+const fb = {app: null, auth: null, db: null, user: null, unsub: [], status: 'off', err: '', flushing: false, t: null, loading: null, authKnown: false};
+const SYNC_TXT = {off: 'ยังไม่ได้ตั้งค่าซิงก์', signedout: 'ยังไม่ได้เข้าสู่ระบบ', syncing: 'กำลังซิงก์…', ok: 'ซิงก์แล้ว', offline: 'ออฟไลน์ (จะซิงก์เมื่อมีอินเทอร์เน็ต)', error: 'ซิงก์ไม่สำเร็จ'};
+const SYNC_C = {off: '#B9C3CB', signedout: '#F0A23C', syncing: '#4D98C4', ok: '#4FB487', offline: '#B9C3CB', error: '#E5636A'};
+const saveMeta = () => store(LS_SYNC, syncMeta);
+const recKey = (pid, d, oid) => `${pid}__${d}__${oid}`;
+const clean = o => JSON.parse(JSON.stringify(o));
+const pending = () => Object.keys(syncMeta.outbox).length;
+function fbConfig() { return FIREBASE_CONFIG || settings.fb || null; }
+function parseFbConfig(txt) {
+  const o = {}; String(txt).replace(/["']?(\w+)["']?\s*:\s*["']([^"']+)["']/g, (_, k, v) => { o[k] = v; });
+  return o.apiKey && o.projectId && o.appId ? {apiKey: o.apiKey, authDomain: o.authDomain || o.projectId + '.firebaseapp.com', projectId: o.projectId, appId: o.appId,
+    storageBucket: o.storageBucket || '', messagingSenderId: o.messagingSenderId || ''} : null;
+}
+function fbErr(e) {
+  const c = (e && e.code) || '';
+  return ({'auth/invalid-credential': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง', 'auth/invalid-login-credentials': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง', 'auth/wrong-password': 'รหัสผ่านไม่ถูกต้อง',
+    'auth/user-not-found': 'ไม่พบบัญชีนี้', 'auth/invalid-email': 'รูปแบบอีเมลไม่ถูกต้อง', 'auth/too-many-requests': 'ลองผิดหลายครั้งเกินไป รอสักครู่แล้วลองใหม่',
+    'auth/network-request-failed': 'เชื่อมต่ออินเทอร์เน็ตไม่ได้', 'auth/operation-not-allowed': 'ยังไม่ได้เปิดการเข้าสู่ระบบด้วยอีเมลใน Firebase (Authentication → Sign-in method)',
+    'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'API key ใน config ไม่ถูกต้อง', 'permission-denied': 'บัญชีนี้ไม่มีสิทธิ์เข้าถึงข้อมูล (ตรวจ Rules ของ Firestore)',
+    'unavailable': 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'failed-precondition': 'ยังไม่ได้สร้างฐานข้อมูล Firestore', 'not-found': 'ยังไม่ได้สร้างฐานข้อมูล Firestore'}[c]) || (e && e.message) || String(e);
+}
+function setSync(st, err = '') {
+  fb.status = st; fb.err = err;
+  const b = $('#bSync'); if (b) { b.style.setProperty('--sc', SYNC_C[st]); b.classList.toggle('spin-dot', st === 'syncing'); b.title = SYNC_TXT[st] + (err ? ': ' + err : ''); }
+  const s = $('#syncStat'); if (s) s.innerHTML = syncStatHtml();
+}
+function syncStatHtml() {
+  return `<span class="pill" style="--c:${SYNC_C[fb.status]}">${SYNC_TXT[fb.status]}</span>${fb.err ? `<div class="muted" style="color:var(--repair);margin-top:6px">${esc(fb.err)}</div>` : ''}
+    <div class="muted" style="margin-top:6px">${syncMeta.last ? 'ซิงก์ล่าสุด ' + new Date(syncMeta.last).toLocaleString('th-TH', {dateStyle: 'medium', timeStyle: 'short'}) : ''}${pending() ? ` · รอส่ง ${pending()} รายการ` : ''}</div>`;
+}
+
+/* --- local change tracking --- */
+function enqueue(key, u = Date.now()) { syncMeta.outbox[key] = u; saveMeta(); scheduleFlush(); }
+function touchPlan(p) { p.u = Date.now(); enqueue('p:' + p.id, p.u); }
+function touchRec(pid, date, oid) {
+  const r = ((records[pid] || {})[date] || {})[oid], u = Date.now();
+  if (r) r.u = u; enqueue('r:' + recKey(pid, date, oid), u);
+}
+function scheduleFlush(ms = 1200) { if (!fb.user) return; clearTimeout(fb.t); fb.t = setTimeout(flush, ms); }
+
+/* --- start / auth --- */
+function loadScript(src) {
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => { s.remove(); rej(new Error('load')); }; document.head.appendChild(s); });
+}
+async function fbStart() {
+  const cfg = fbConfig();
+  if (!cfg || IN_ARTIFACT) { setSync('off'); return; }
+  if (fb.app) return;
+  if (!fb.loading) fb.loading = (async () => {
+    for (const m of ['app', 'auth', 'firestore']) if (!(window.firebase && (m === 'app' || firebase[m]))) await loadScript(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-${m}-compat.js`);
+  })();
+  try { await fb.loading; } catch (e) { fb.loading = null; setSync('offline', 'โหลดระบบซิงก์ไม่ได้'); window.addEventListener('online', fbStart, {once: true}); return; }
+  if (fb.app) return;
+  try {
+    fb.app = firebase.initializeApp(cfg); fb.auth = firebase.auth(); fb.db = firebase.firestore();
+    if (window.LBC_EMULATOR) { fb.auth.useEmulator('http://127.0.0.1:9099', {disableWarnings: true}); fb.db.useEmulator('127.0.0.1', 8080); }
+  } catch (e) { setSync('error', fbErr(e)); return; }
+  setSync('signedout');
+  fb.auth.onAuthStateChanged(u => {
+    fb.user = u; fb.authKnown = true;
+    if (u) onSignedIn(); else { stopListeners(); setSync('signedout'); }
+    if ($('#syncBody')) renderSyncModal();
+  });
+}
+async function signIn(email, pw) { return fb.auth.signInWithEmailAndPassword(email, pw); }
+async function signOut() {
+  stopListeners(); syncMeta.linked = ''; syncMeta.since = 0; saveMeta();
+  if (fb.auth) await fb.auth.signOut();
+}
+function isUntouchedLocal() {
+  return !Object.keys(records).some(pid => Object.keys(records[pid] || {}).length) && plans.length === 1 && !plans[0].u;
+}
+async function onSignedIn() {
+  setSync('syncing');
+  try {
+    const scope = fbConfig().projectId + '/' + fb.user.uid;
+    if (syncMeta.linked !== scope) {
+      const ps = await fb.db.collection('plans').get();
+      const live = ps.docs.filter(d => !d.data().deleted);
+      let how = 'merge';
+      if (live.length) how = isUntouchedLocal() ? 'replace' : await askLink(live.length);
+      if (how === 'cancel') { await signOut(); return; }
+      if (how === 'replace') {
+        plans = []; records = {}; syncMeta.outbox = {}; syncMeta.dead = {}; syncMeta.since = 0;
+        ps.docs.forEach(d => applyRemote('plans', d)); syncMeta.since = 0;
+        undoStack = []; redoStack = []; sel = null; afterRemote(); fit();
+      } else await reconcileAll();
+      syncMeta.linked = scope; saveMeta();
+    }
+    startListeners(); flush();
+  } catch (e) { setSync(e.code === 'unavailable' ? 'offline' : 'error', fbErr(e)); }
+}
+function askLink(n) {
+  return new Promise(res => {
+    modal('เชื่อมข้อมูลกับออนไลน์', `<p class="muted">บัญชีนี้มีข้อมูลออนไลน์อยู่แล้ว (${n} ผัง) และเครื่องนี้ก็มีข้อมูลของตัวเอง จะใช้ข้อมูลแบบไหน?</p>
+      <div class="info blue"><b>ใช้ข้อมูลออนไลน์</b> — ข้อมูลในเครื่องนี้จะถูกแทนที่ด้วยข้อมูลจากออนไลน์ (เหมาะกับเครื่องที่เพิ่งเริ่มใช้)</div>
+      <div class="info" style="margin-top:8px"><b>รวมข้อมูล</b> — ส่งผังและผลตรวจในเครื่องนี้ขึ้นไปรวมกับข้อมูลออนไลน์ (ถ้ามีผังตัวอย่างในเครื่องนี้ ผังตัวอย่างจะถูกส่งขึ้นไปด้วย)</div>`,
+      `<button class="btn ghost" id="lkCancel">ยกเลิก</button><button class="btn" id="lkMerge">รวมข้อมูล</button><button class="btn pri" id="lkRep">ใช้ข้อมูลออนไลน์</button>`);
+    $('#modal').dataset.lock = '1';
+    const done = v => { closeModal(); res(v); };
+    $('#modal .x').onclick = () => done('cancel'); $('#lkCancel').onclick = () => done('cancel');
+    $('#lkMerge').onclick = () => done('merge'); $('#lkRep').onclick = () => done('replace');
+  });
+}
+async function reconcileAll() {
+  const [ps, rs] = await Promise.all([fb.db.collection('plans').get(), fb.db.collection('records').get()]);
+  const ru = {};
+  ps.docs.forEach(d => { ru['p:' + d.id] = d.data().u || 0; applyRemote('plans', d); });
+  rs.docs.forEach(d => { ru['r:' + d.id] = d.data().u || 0; applyRemote('records', d); });
+  const now = Date.now();
+  plans.forEach(p => { p.u = p.u || now; const k = 'p:' + p.id; if (!(k in ru) || p.u > ru[k]) syncMeta.outbox[k] = p.u; });
+  for (const [pid, ds] of Object.entries(records)) for (const [d, rr] of Object.entries(ds)) for (const [oid, r] of Object.entries(rr)) {
+    r.u = r.u || Date.parse(r.time) || now; const k = 'r:' + recKey(pid, d, oid); if (!(k in ru) || r.u > ru[k]) syncMeta.outbox[k] = r.u;
+  }
+  afterRemote(); saveMeta();
+}
+
+/* --- receive --- */
+function stopListeners() { fb.unsub.forEach(f => { try { f(); } catch (_) {} }); fb.unsub = []; }
+function startListeners() {
+  stopListeners();
+  const since = firebase.firestore.Timestamp.fromMillis(syncMeta.since || 0);
+  const handler = col => snap => {
+    let changed = false;
+    snap.docChanges().forEach(c => { if (!c.doc.metadata.hasPendingWrites && applyRemote(col, c.doc)) changed = true; });
+    if (!snap.metadata.fromCache) syncMeta.last = Date.now();
+    saveMeta(); if (changed) afterRemote();
+    if (!fb.flushing) setSync(!navigator.onLine ? 'offline' : pending() ? 'syncing' : 'ok');
+  };
+  const onErr = e => setSync('error', fbErr(e));
+  fb.unsub.push(fb.db.collection('plans').onSnapshot(handler('plans'), onErr));
+  fb.unsub.push(fb.db.collection('records').where('su', '>', since).onSnapshot(handler('records'), onErr));
+}
+function applyRemote(col, doc) {
+  const d = doc.data(), ru = d.u || 0;
+  if (d.su && d.su.toMillis) syncMeta.since = Math.max(syncMeta.since, d.su.toMillis());
+  if (col === 'plans') {
+    const id = doc.id, i = plans.findIndex(p => p.id === id), lu = i >= 0 ? (plans[i].u || 0) : (syncMeta.dead[id] || 0);
+    if (ru <= lu) return false;
+    const k = 'p:' + id; if (syncMeta.outbox[k] && syncMeta.outbox[k] <= ru) delete syncMeta.outbox[k];
+    if (d.deleted) { syncMeta.dead[id] = ru; if (i < 0) return false; plans.splice(i, 1); delete records[id]; return true; }
+    delete syncMeta.dead[id];
+    const p = {id, name: d.name || 'ผัง', w: d.w || 1000, h: d.h || 700, grid: d.grid || 25, floor: d.floor || '#FFFFFF', objects: Array.isArray(d.objects) ? d.objects : [], u: ru};
+    if (i < 0) plans.push(p); else plans[i] = p;
+    return true;
+  }
+  const [pid, date, oid] = doc.id.split('__');
+  if (!pid || !date || !oid || syncMeta.dead[pid]) return false;
+  const k = 'r:' + doc.id, local = ((records[pid] || {})[date] || {})[oid];
+  const lu = local ? (local.u || Date.parse(local.time) || 0) : (syncMeta.outbox[k] || 0);
+  if (ru <= lu) return false;
+  if (syncMeta.outbox[k] && syncMeta.outbox[k] <= ru) delete syncMeta.outbox[k];
+  if (d.deleted) {
+    if (!local) return false;
+    delete records[pid][date][oid]; if (!Object.keys(records[pid][date]).length) delete records[pid][date]; return true;
+  }
+  const rec = Object.assign({}, d); ['su', 'planId', 'date', 'objId', 'deleted'].forEach(f => delete rec[f]);
+  records[pid] = records[pid] || {}; records[pid][date] = records[pid][date] || {}; records[pid][date][oid] = rec;
+  return true;
+}
+function afterRemote() {
+  store(LS.plans, plans); saveRecords();
+  if (!plans.length) { const np = {id: uid(), name: 'ผังใหม่', w: 800, h: 600, grid: 25, floor: '#FFFFFF', objects: []}; plans.push(np); curPlanId = np.id; touchPlan(np); store(LS.plans, plans); }
+  if (!plan()) { curPlanId = plans[0].id; store(LS.cur, curPlanId); sel = null; undoStack = []; redoStack = []; updTools(); if (drawer && drawer.kind !== 'issues' && drawer.kind !== 'history') closeDrawer(); }
+  if (sel && !getObj(sel) && !(drawer && drawer.kind === 'inspect')) sel = null;
+  fillPlanSel(); render();
+  const typing = drawerEl.contains(document.activeElement) && document.activeElement.matches('input,textarea,select');
+  if (drawer && !typing && ['issues', 'history', 'plan'].includes(drawer.kind)) refreshDrawer();
+}
+
+/* --- send --- */
+async function flush() {
+  if (!fb.user || !fb.db || fb.flushing) return;
+  const entries = Object.entries(syncMeta.outbox);
+  if (!entries.length) { setSync(navigator.onLine ? 'ok' : 'offline'); return; }
+  fb.flushing = true; setSync(navigator.onLine ? 'syncing' : 'offline');
+  const ST = firebase.firestore.FieldValue.serverTimestamp;
+  try {
+    let batch = fb.db.batch(), n = 0, bytes = 0;
+    const commit = async () => { if (n) await batch.commit(); batch = fb.db.batch(); n = 0; bytes = 0; };
+    for (const [k, v] of entries) {
+      const id = k.slice(2); let ref, data;
+      if (k[0] === 'p') {
+        const p = plans.find(x => x.id === id); ref = fb.db.collection('plans').doc(id);
+        data = p ? clean({name: p.name, w: p.w, h: p.h, grid: p.grid || 25, floor: p.floor || '#FFFFFF', objects: p.objects, u: p.u || v, deleted: false})
+                 : {deleted: true, u: syncMeta.dead[id] || v};
+      } else {
+        const [pid, date, oid] = id.split('__'), r = ((records[pid] || {})[date] || {})[oid]; ref = fb.db.collection('records').doc(id);
+        data = r ? Object.assign(clean(r), {u: r.u || v, planId: pid, date, objId: oid, deleted: false}) : {deleted: true, u: v, planId: pid, date, objId: oid};
+      }
+      const sz = JSON.stringify(data).length;
+      if (n >= 400 || bytes + sz > 7e6) await commit();
+      data.su = ST(); batch.set(ref, data); n++; bytes += sz;
+    }
+    await commit();
+    entries.forEach(([k, v]) => { if (syncMeta.outbox[k] === v) delete syncMeta.outbox[k]; });
+    syncMeta.last = Date.now(); saveMeta(); setSync('ok');
+  } catch (e) { setSync(e.code === 'unavailable' ? 'offline' : 'error', fbErr(e)); }
+  finally { fb.flushing = false; }
+  if (pending()) scheduleFlush(fb.status === 'ok' ? 300 : 20000);
+}
+
+/* --- sync modal --- */
+function openSync() { modal('ซิงก์ข้อมูลระหว่างเครื่อง', '<div id="syncBody"></div>', '<button class="btn ghost" data-close>ปิด</button>'); renderSyncModal(); }
+function renderSyncModal() {
+  const box = $('#syncBody'); if (!box) return;
+  const cfg = fbConfig();
+  if (IN_ARTIFACT) { box.innerHTML = '<div class="info">การซิงก์ใช้ได้เมื่อเปิดจากเว็บไซต์ของแอป (GitHub Pages) เท่านั้น</div>'; return; }
+  if (!cfg) {
+    box.innerHTML = `<p class="muted">ให้ iPad และคอมพิวเตอร์ใช้ข้อมูลชุดเดียวกันผ่าน Firebase (ฟรี) — สร้างโปรเจกต์ Firebase ตามขั้นตอนใน README แล้ววาง <b>firebaseConfig</b> ที่ได้ลงด้านล่าง</p>
+      <textarea class="ta" id="fbCfg" rows="8" placeholder='const firebaseConfig = {\n  apiKey: "AIza...",\n  authDomain: "....firebaseapp.com",\n  projectId: "...",\n  appId: "1:...:web:..."\n};'></textarea>
+      <div class="row" style="margin-top:10px"><button class="btn pri" id="fbCfgSave">บันทึก config</button></div>`;
+    $('#fbCfgSave').onclick = () => { const c = parseFbConfig($('#fbCfg').value); if (!c) return toast('อ่าน config ไม่ได้ ต้องมี apiKey, projectId และ appId', 'err', 3500);
+      settings.fb = c; saveSettings(); renderSyncModal(); fbStart(); };
+    return;
+  }
+  const head = `<div class="muted" style="margin-bottom:8px">โปรเจกต์ Firebase: <b>${esc(cfg.projectId)}</b></div><div id="syncStat">${syncStatHtml()}</div>`;
+  if (!fb.authKnown) { box.innerHTML = head + '<p class="muted" style="margin-top:12px">กำลังเชื่อมต่อ…</p>'; fbStart(); return; }
+  if (!fb.user) {
+    box.innerHTML = head + `<div class="lbl">เข้าสู่ระบบ (บัญชีที่สร้างไว้ใน Firebase)</div>
+      <input class="in" id="fbEmail" type="email" autocomplete="username" placeholder="อีเมล" value="${esc(settings.fbEmail || '')}">
+      <input class="in" id="fbPw" type="password" autocomplete="current-password" placeholder="รหัสผ่าน" style="margin-top:8px">
+      <div class="row" style="margin-top:10px"><button class="btn pri" id="fbIn">เข้าสู่ระบบ</button>${FIREBASE_CONFIG ? '' : '<button class="btn sm ghost" id="fbReset">เปลี่ยน config</button>'}</div>`;
+    const go = async () => { const btn = $('#fbIn'), em = $('#fbEmail').value.trim(), pw = $('#fbPw').value;
+      if (!em || !pw) return toast('กรอกอีเมลและรหัสผ่าน', 'err');
+      btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+      try { await signIn(em, pw); settings.fbEmail = em; saveSettings(); }
+      catch (e) { setSync('signedout', fbErr(e)); btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ'; } };
+    $('#fbIn').onclick = go; $('#fbPw').onkeydown = e => { if (e.key === 'Enter') go(); };
+    const r = $('#fbReset'); if (r) r.onclick = () => { delete settings.fb; saveSettings(); location.reload(); };
+    return;
+  }
+  box.innerHTML = head + `<div class="info blue" style="margin-top:12px">เข้าสู่ระบบเป็น <b>${esc(fb.user.email || '')}</b><br>ทุกเครื่องที่เข้าสู่ระบบด้วยบัญชีนี้จะเห็นผังและผลตรวจชุดเดียวกัน และอัปเดตอัตโนมัติ</div>
+    <div class="row" style="margin-top:12px"><button class="btn pri" id="fbNow">ซิงก์ตอนนี้</button><button class="btn ghost" id="fbOut">ออกจากระบบ</button></div>
+    <p class="muted">ถ้าไม่มีอินเทอร์เน็ตก็ใช้งานได้ตามปกติ ข้อมูลจะถูกส่งขึ้นเมื่อกลับมาออนไลน์</p>`;
+  $('#fbNow').onclick = () => { if (!fb.unsub.length) onSignedIn(); else flush(); };
+  $('#fbOut').onclick = () => confirmBox('ออกจากระบบซิงก์?', 'ข้อมูลในเครื่องนี้ยังอยู่ แต่จะไม่ซิงก์กับเครื่องอื่นจนกว่าจะเข้าสู่ระบบใหม่', 'ออกจากระบบ', () => signOut().then(() => toast('ออกจากระบบแล้ว')));
+}
+window.addEventListener('online', () => { if (fb.user) { flush(); setSync(pending() ? 'syncing' : 'ok'); } });
+window.addEventListener('offline', () => { if (fb.user) setSync('offline'); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && pending()) flush(); });
+setInterval(() => { if (pending() && !fb.flushing) flush(); }, 30000);
+
 /* ---------- modal / toast ---------- */
 function modal(title, body, foot, wide) {
-  const m = $('#modal'); m.className = 'modal' + (wide ? ' wide' : '');
+  const m = $('#modal'); m.className = 'modal' + (wide ? ' wide' : ''); delete m.dataset.lock;
   m.innerHTML = `<div class="mh"><h2>${title}</h2><button class="x noprint" data-close aria-label="ปิด">×</button></div><div class="mb">${body}</div><div class="mf noprint">${foot}</div>`;
   $('#mwrap').classList.add('show');
   m.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModal);
 }
 function closeModal() { $('#mwrap').classList.remove('show'); }
-$('#mwrap').addEventListener('pointerdown', e => { if (e.target.id === 'mwrap') closeModal(); });
+$('#mwrap').addEventListener('pointerdown', e => { if (e.target.id === 'mwrap' && !$('#modal').dataset.lock) closeModal(); });
 function confirmBox(title, msg, okText, fn, danger) {
   modal(esc(title), msg ? `<p class="muted">${esc(msg)}</p>` : '', `<button class="btn ghost" data-close>ยกเลิก</button><button class="btn ${danger ? 'danger' : 'pri'}" id="cOk">${esc(okText)}</button>`);
   $('#cOk').onclick = () => { closeModal(); fn(); };
@@ -1330,6 +1591,7 @@ $('#bIssues').onclick = () => drawer && drawer.kind === 'issues' ? closeDrawer()
 $('#bHistory').onclick = () => drawer && drawer.kind === 'history' ? closeDrawer() : openHistory();
 $('#bReport').onclick = openReport;
 $('#bSettings').onclick = openSettings;
+$('#bSync').onclick = openSync;
 $('#zIn').onclick = () => zoomAt(1.25); $('#zOut').onclick = () => zoomAt(.8); $('#zFit').onclick = fit;
 $('#tUndo').onclick = undo; $('#tRedo').onclick = redo;
 $('#tSnap').onclick = () => { settings.snap = !settings.snap; saveSettings(); updTools(); toast(settings.snap ? 'ยึดกริด: เปิด (หมุนทีละ 15°)' : 'ยึดกริด: ปิด'); };
@@ -1348,6 +1610,7 @@ setInterval(() => { const t = today(); if ($('#dateIn').max !== t) { const wasTo
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 applyLogo(); fillPlanSel(); buildPalette(); updTools(); setDate(viewDate); requestAnimationFrame(fit);
+setSync(fbConfig() ? 'signedout' : 'off'); fbStart();
 </script>
 </body>
 </html>

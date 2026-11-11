@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // อนุญาตเฉพาะบัญชีที่อยู่ในรายชื่อนี้ (แก้อีเมลให้ตรงกับบัญชีที่สร้างใน Authentication)
+    function isStaff() {
+      return request.auth != null
+        && request.auth.token.email in ['lobby@example.com'];
+    }
+    match /plans/{planId} {
+      allow read, write: if isStaff();
+    }
+    match /records/{recordId} {
+      allow read, write: if isStaff();
+    }
+  }
+}

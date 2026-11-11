@@ -1,5 +1,5 @@
 // Offline support: pages load from network when online (so updates arrive), from cache when offline.
-const CACHE = 'lobby-checklist-v1';
+const CACHE = 'lobby-checklist-v2';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
@@ -10,7 +10,8 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;                       // never touch API calls (POST to OpenAI)
   const sameOrigin = url.origin === location.origin;
   const isFont = /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname);
-  if (!sameOrigin && !isFont) return;
+  const isSdk = url.hostname === 'www.gstatic.com' && url.pathname.startsWith('/firebasejs/');
+  if (!sameOrigin && !isFont && !isSdk) return;   // Firestore/Auth traffic is never cached
   e.respondWith(
     fetch(req).then(res => {
       if (res && (res.ok || res.type === 'opaque')) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
