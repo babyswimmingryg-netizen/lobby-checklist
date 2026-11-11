@@ -1,0 +1,16 @@
+{
+  "name": "Lobby Checklist",
+  "short_name": "Lobby Check",
+  "description": "เช็กลิสต์ตรวจล็อบบี้รายวันแบบผังมุมบน",
+  "lang": "th",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F4F9FC",
+  "theme_color": "#86C0DF",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
