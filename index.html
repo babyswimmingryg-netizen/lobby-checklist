@@ -1480,7 +1480,15 @@ async function aiChecklist(o) {
    plans/{planId}            = ผัง 1 ผัง
    records/{plan__date__obj} = ผลตรวจ 1 จุดใน 1 วัน
    ตัดสินข้อมูลที่ชนกันด้วยเวลาแก้ไขล่าสุด (u) */
-const FIREBASE_CONFIG = null; // ใส่ config ของ Firebase ที่นี่เพื่อให้ทุกเครื่องใช้ร่วมกัน (ค่านี้เปิดเผยได้ ความปลอดภัยอยู่ที่ Rules)
+// config ของ Firebase ที่ทุกเครื่องใช้ร่วมกัน (ค่านี้เปิดเผยได้ ความปลอดภัยอยู่ที่ Rules ของ Firestore)
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyDxpcsYv6K2F3XIvdSeWPI7jg6lhWWwRt4',
+  authDomain: 'lobby-checklist.firebaseapp.com',
+  projectId: 'lobby-checklist',
+  storageBucket: 'lobby-checklist.firebasestorage.app',
+  messagingSenderId: '1040750903605',
+  appId: '1:1040750903605:web:b46efa00bf20c0a5588c7c'
+};
 const FB_VER = '10.12.2';
 const LS_SYNC = 'lbc.sync';
 let syncMeta = Object.assign({since: 0, linked: '', outbox: {}, dead: {}, last: 0}, load(LS_SYNC, {}));
